@@ -6,7 +6,7 @@ const NEXT_WEEK_MESSAGE = 'استنّى غرس الأسبوع الجاي';
 const SEGMENTS = [
   {id:'duck',label:['بطة','غرس'],icon:'🦆',outcome:'prize',title:'مبروك كسبت بطة غرس'},
   {id:'ball',label:['كورة','غرس'],icon:'⚽',outcome:'prize',title:'مبروك كسبت كورة غرس'},
-  {id:'pack',label:['Pack','غرس'],icon:'🎁',outcome:'prize',title:'مبروك كسبت Pack غرس'},
+  {id:'pack',label:['باك','غرس'],icon:'🎁',outcome:'prize',title:'مبروك كسبت باك غرس'},
   {id:'retry',label:['حاول','مرة أخرى'],icon:'🔄',outcome:'retry',title:'حاول مرة أخرى'},
   {id:'ask',label:['اسأل','غرس'],icon:'💬',outcome:'question',title:'اسأل غرس'},
   {id:'sticker',label:['ستيكر','غرس'],icon:'🏷️',outcome:'prize',title:'مبروك كسبت ستيكر غرس'}
@@ -19,15 +19,21 @@ const polar=(r,a)=>{const t=a*Math.PI/180;return {x:CENTER+Math.cos(t)*r,y:CENTE
 function wedge(s,e){const a=polar(RADIUS,s),b=polar(RADIUS,e);return `M ${CENTER} ${CENTER} L ${a.x} ${a.y} A ${RADIUS} ${RADIUS} 0 ${e-s>180?1:0} 1 ${b.x} ${b.y} Z`;}
 function drawWheel(){
  const svg=$('wheel-svg');svg.replaceChildren();
+ const isMobile=window.matchMedia('(max-width: 520px)').matches;
  svg.append(createSvg('circle',{cx:CENTER,cy:CENTER,r:275,fill:'#2b5830'}),createSvg('circle',{cx:CENTER,cy:CENTER,r:260,fill:'#fff8e6'}));
  SEGMENTS.forEach((seg,i)=>{
-   const mid=-90+i*SWEEP,lp=polar(187,mid),ip=polar(122,mid),dot=polar(231,mid);
+   const mid=-90+i*SWEEP;
+   const labelRadius=isMobile?(i===0?160:170):(i===0?168:180);
+   const iconRadius=isMobile?(i===0?102:116):(i===0?108:122);
+   const lineGap=isMobile?22:25;
+   const iconSize=isMobile?34:42;
+   const lp=polar(labelRadius,mid),ip=polar(iconRadius,mid),dot=polar(231,mid);
    const group=createSvg('g');
    group.append(createSvg('path',{d:wedge(mid-SWEEP/2,mid+SWEEP/2),fill:SEGMENT_COLORS[i],stroke:'#fff9e9','stroke-width':4,'stroke-linejoin':'round'}));
    group.append(createSvg('circle',{cx:dot.x,cy:dot.y,r:5.5,fill:'#fff5d5',opacity:.9}));
-   const icon=createSvg('text',{x:ip.x,y:ip.y+11,'text-anchor':'middle','font-size':42,class:'wheel-emoji'});icon.textContent=seg.icon;group.append(icon);
-   const label=createSvg('text',{x:lp.x,y:lp.y-10,'text-anchor':'middle',class:'wheel-label',direction:'rtl'});
-   seg.label.forEach((line,n)=>{const t=createSvg('tspan',{x:lp.x,dy:n===0?0:27});t.textContent=line;label.append(t);});group.append(label);svg.append(group);
+   const icon=createSvg('text',{x:ip.x,y:ip.y+11,'text-anchor':'middle','font-size':iconSize,class:'wheel-emoji'});icon.textContent=seg.icon;group.append(icon);
+   const label=createSvg('text',{x:lp.x,y:lp.y-8,'text-anchor':'middle',class:'wheel-label',direction:'rtl'});
+   seg.label.forEach((line,n)=>{const t=createSvg('tspan',{x:lp.x,dy:n===0?0:lineGap});t.textContent=line;label.append(t);});group.append(label);svg.append(group);
  });
  svg.append(createSvg('circle',{cx:CENTER,cy:CENTER,r:255,fill:'none',stroke:'#ffedc1','stroke-width':9}));
  svg.append(createSvg('circle',{cx:CENTER,cy:CENTER,r:269,fill:'none',stroke:'#c89946','stroke-width':4}));
@@ -36,8 +42,8 @@ function drawWheel(){
 let rotation=0,spinning=false,result=null,target=null,spinTimer=0,soundEnabled=false,audioContext=null;
 const rand=(n)=>{if(window.crypto?.getRandomValues){const arr=new Uint32Array(1);crypto.getRandomValues(arr);return Math.floor(arr[0]/4294967296*n);}return Math.floor(Math.random()*n);};
 function tone(celebrate=false){if(!soundEnabled)return;try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;audioContext??=new A();if(audioContext.state==='suspended')audioContext.resume();(celebrate?[523.25,659.25,783.99,1046.5]:[440,520]).forEach((freq,i)=>{const osc=audioContext.createOscillator(),g=audioContext.createGain();osc.type='sine';osc.frequency.value=freq;g.gain.setValueAtTime(.0001,audioContext.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.07,audioContext.currentTime+i*.12+.015);g.gain.exponentialRampToValueAtTime(.0001,audioContext.currentTime+i*.12+.22);osc.connect(g).connect(audioContext.destination);osc.start(audioContext.currentTime+i*.12);osc.stop(audioContext.currentTime+i*.12+.24);});}catch{}}
-function settle(){if(target===null)return;result=SEGMENTS[target];target=null;spinning=false;$('wheel-hub').disabled=false;$('wheel-hub').setAttribute('aria-label','اضغط على شعار غرس لبدء لف العجلة');$('wheel-stage').classList.remove('is-spinning');$('hub-tap').hidden=false;clearTimeout(spinTimer);tone(result.outcome==='prize');showResult();}
-function spin(){if(spinning||result)return;spinning=true;target=rand(SEGMENTS.length);$('wheel-hub').disabled=true;$('wheel-hub').setAttribute('aria-label','العجلة بتلف حاليًا');$('hub-tap').hidden=true;$('wheel-stage').classList.add('is-spinning');tone(false);const step=360/SEGMENTS.length,cur=((rotation%360)+360)%360,dest=((360-target*step)%360+360)%360,alignment=(dest-cur+360)%360;rotation+=(6+rand(3))*360+alignment;$('wheel-dial').style.transform=`rotate(${rotation}deg)`;clearTimeout(spinTimer);spinTimer=setTimeout(settle,5450);}
+function settle(){if(target===null)return;result=SEGMENTS[target];target=null;spinning=false;$('wheel-hub').disabled=false;$('wheel-hub').setAttribute('aria-label','اضغط على شعار غرس لبدء لف العجلة');$('wheel-stage').classList.remove('is-spinning');const hubTap=$('hub-tap'); if(hubTap) hubTap.hidden=false;clearTimeout(spinTimer);tone(result.outcome==='prize');showResult();}
+function spin(){if(spinning||result)return;spinning=true;target=rand(SEGMENTS.length);$('wheel-hub').disabled=true;$('wheel-hub').setAttribute('aria-label','العجلة بتلف حاليًا');const hubTap=$('hub-tap'); if(hubTap) hubTap.hidden=true;$('wheel-stage').classList.add('is-spinning');tone(false);const step=360/SEGMENTS.length,cur=((rotation%360)+360)%360,dest=((360-target*step)%360+360)%360,alignment=(dest-cur+360)%360;rotation+=(6+rand(3))*360+alignment;$('wheel-dial').style.transform=`rotate(${rotation}deg)`;clearTimeout(spinTimer);spinTimer=setTimeout(settle,5450);}
 function createConfetti(){const wrap=document.createElement('div');wrap.className='confetti-container';wrap.setAttribute('aria-hidden','true');const colors=['#efac38','#397c38','#df8542','#f0cc63','#8bb86b','#ffffff'];const seeded=(i,s)=>((i*(71+s)+s*31)%101)/100;for(let i=0;i<65;i++){const p=document.createElement('span');p.className='confetti-piece';p.style.setProperty('--x',`${seeded(i,13)*100}vw`);p.style.setProperty('--delay',`${seeded(i,4)*.85}s`);p.style.setProperty('--duration',`${2.6+seeded(i,22)*2.1}s`);p.style.setProperty('--drift',`${(seeded(i,8)-.5)*165}px`);p.style.setProperty('--rotation',`${(seeded(i,3)-.5)*1440}deg`);p.style.backgroundColor=colors[i%colors.length];wrap.append(p);}return wrap;}
 function closeResult(){result=null;$('result-root').replaceChildren();$('wheel-hub').focus({preventScroll:true});}
 function showResult(){const overlay=document.createElement('div');overlay.className='result-overlay';overlay.setAttribute('role','presentation');if(result.outcome==='prize')overlay.append(createConfetti());const card=document.createElement('div');card.className=`result-card result-compact result-${result.outcome}`;card.setAttribute('role','dialog');card.setAttribute('aria-modal','true');card.setAttribute('aria-label','نتيجة عجلة غرس');card.setAttribute('aria-labelledby',result.outcome==='prize'?'result-title':'result-message');if(result.outcome==='prize')card.setAttribute('aria-describedby','result-message');
@@ -48,7 +54,7 @@ function showResult(){const overlay=document.createElement('div');overlay.classN
 let installPrompt=null,offlineReady=false,preparing=false;
 function isOfflineCapable(){return window.isSecureContext&&'serviceWorker'in navigator&&'MessageChannel'in window;}
 function checkCachedApp(worker){if(!worker)return Promise.resolve(false);return new Promise(resolve=>{const channel=new MessageChannel();let done=false;const timeout=setTimeout(()=>finish(false),7000);function finish(v){if(done)return;done=true;clearTimeout(timeout);channel.port1.close();resolve(Boolean(v));}channel.port1.onmessage=e=>finish(e.data?.ready===true);channel.port1.onmessageerror=()=>finish(false);try{worker.postMessage({type:'GHARS_CHECK_OFFLINE'},[channel.port2]);}catch{finish(false);}});}
-function updateOfflineUi(){const status=$('offline-status');status.classList.toggle('offline-pending',!offlineReady);$('offline-label').textContent=offlineReady?(navigator.onLine?'جاهز يشتغل بدون نت':'شغال بدون إنترنت'):(isOfflineCapable()?'جاري تجهيز وضع بدون نت...':'وضع بدون نت يحتاج رابط HTTPS');}
+function updateOfflineUi(){const status=$('offline-status'), label=$('offline-label'); if(!status||!label) return; status.classList.toggle('offline-pending',!offlineReady); label.textContent=offlineReady?(navigator.onLine?'جاهز يشتغل بدون نت':'شغال بدون إنترنت'):(isOfflineCapable()?'جاري تجهيز وضع بدون نت...':'وضع بدون نت يحتاج رابط HTTPS');}
 async function prepareOffline(){if(preparing||!isOfflineCapable())return;preparing=true;try{await navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'});const reg=await navigator.serviceWorker.ready;offlineReady=await checkCachedApp(reg.active);updateOfflineUi();}catch(e){console.warn('Offline setup will retry on next online visit:',e);}finally{preparing=false;}}
 function init(){document.querySelectorAll('[data-ghars-logo]').forEach(img=>img.src=LOGO_SRC);drawWheel();$('wheel-hub').addEventListener('click',spin);$('wheel-dial').addEventListener('transitionend',e=>{if(e.target===e.currentTarget&&e.propertyName==='transform')settle();});
  $('sound-btn').addEventListener('click',()=>{soundEnabled=!soundEnabled;$('sound-icon').textContent=soundEnabled?'🔊':'🔇';$('sound-btn').setAttribute('aria-label',soundEnabled?'إيقاف الصوت':'تشغيل الصوت');});
@@ -56,8 +62,10 @@ function init(){document.querySelectorAll('[data-ghars-logo]').forEach(img=>img.
  document.addEventListener('fullscreenchange',()=>{$('fullscreen-btn').setAttribute('aria-label',document.fullscreenElement?'إنهاء ملء الشاشة':'ملء الشاشة');});
  window.addEventListener('keydown',e=>{if(e.key==='Escape'&&result){closeResult();return;}if((e.key===' '||e.key==='Enter')&&!spinning&&!result&&!['BUTTON','INPUT','TEXTAREA'].includes(document.activeElement?.tagName)){e.preventDefault();spin();}});
  window.addEventListener('online',()=>{updateOfflineUi();if(!offlineReady)prepareOffline();});window.addEventListener('offline',updateOfflineUi);
- window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('install-btn').hidden=false;});window.addEventListener('appinstalled',()=>{installPrompt=null;$('install-btn').hidden=true;});
- $('install-btn').addEventListener('click',async()=>{if(!installPrompt)return;const p=installPrompt;installPrompt=null;$('install-btn').hidden=true;try{await p.prompt();}catch{}});
+ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;const btn=$('install-btn'); if(btn) btn.hidden=false;});window.addEventListener('appinstalled',()=>{installPrompt=null;const btn=$('install-btn'); if(btn) btn.hidden=true;});
+ const installBtn=$('install-btn'); if(installBtn) installBtn.addEventListener('click',async()=>{if(!installPrompt)return;const p=installPrompt;installPrompt=null;installBtn.hidden=true;try{await p.prompt();}catch{}});
  updateOfflineUi();prepareOffline();
+ let resizeTimer; window.addEventListener('resize',()=>{clearTimeout(resizeTimer); resizeTimer=setTimeout(drawWheel,120);});
 }
+
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();

@@ -283,3 +283,18 @@ button:focus-visible{outline:3px solid #e2a332;outline-offset:4px}
   }
   .game-panel { max-width: 100%; }
 }
+
+
+/* v1.8 mobile cleanup */
+.wheel-topline,.hub-tap,.offline-status{display:none !important}
+.wheel-stage{margin-top:0}
+@media(max-width:520px){
+  .wheel-stage{width:min(calc(100vw - 18px),430px)}
+  .wheel-label{font-size:18px !important;stroke-width:.5px;letter-spacing:0}
+  .wheel-emoji{font-size:32px !important}
+}
+@media(max-width:390px){
+  .wheel-stage{width:min(calc(100vw - 16px),400px)}
+  .wheel-label{font-size:17px !important}
+  .wheel-emoji{font-size:29px !important}
+}
