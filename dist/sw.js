@@ -1,11 +1,23 @@
 /* Generated at build time. Do not manually edit dist/sw.js. */
-const CACHE_NAME = 'ghars-spin-offline-v19-20261106';
+const CACHE_NAME = 'ghars-spin-offline-v21-20261106';
 const CACHE_PREFIX = 'ghars-spin-offline-';
 const APP_SHELL = new URL('./index.html', self.registration.scope).href;
 const PRECACHE_PATHS = [
   "./",
-  "./assets/ghars-wheel-v19.css",
-  "./assets/ghars-wheel-v19.js",
+  "./assets/ghars-wheel-v21.css",
+  "./assets/ghars-wheel-v21.js",
+  "./assets/labels/duck.png",
+  "./assets/labels/ball.png",
+  "./assets/labels/pack.png",
+  "./assets/labels/retry.png",
+  "./assets/labels/ask.png",
+  "./assets/labels/sticker.png",
+  "./assets/icons/duck.png",
+  "./assets/icons/ball.png",
+  "./assets/icons/pack.png",
+  "./assets/icons/retry.png",
+  "./assets/icons/ask.png",
+  "./assets/icons/sticker.png",
   "./ghars-logo.png",
   "./icons/apple-touch-icon.png",
   "./icons/icon-192.png",
